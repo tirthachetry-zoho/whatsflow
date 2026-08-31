@@ -18,11 +18,5 @@
     "src/app/api/demo/simulate/route.ts": {
       "maxDuration": 30
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/followups",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  }
 }
