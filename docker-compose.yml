@@ -1,0 +1,114 @@
+# Freebuff Desktop + OpenWA — Full Stack
+# Usage:
+#   docker compose up -d                    # Start everything
+#   docker compose --profile full up -d     # With PostgreSQL + Redis
+#   docker compose logs -f openwa           # Watch OpenWA logs
+
+services:
+  # ── OpenWA WhatsApp Gateway ──
+  openwa:
+    image: ghcr.io/rmyndharis/openwa:latest
+    container_name: freebuff-openwa
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      - NODE_ENV=production
+      - PORT=2785
+      - ENGINE_TYPE=whatsapp-web.js
+      # Set your API key for OpenWA dashboard
+      - API_KEY=${OPENWA_API_KEY:-freebuff-admin-key}
+      # Webhook URL — points to Freebuff
+      - WEBHOOK_URL=http://freebuff-app:3000/api/webhooks/openwa
+    volumes:
+      - openwa-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2785/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - freebuff-net
+
+  # ── Freebuff App ──
+  freebuff-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freebuff-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://freebuff:freebuff@postgres:5432/freebuff?schema=public}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - AUTH_SECRET=${AUTH_SECRET:-change-me-in-production}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      # OpenWA points to the internal Docker network
+      - OPENWA_BASE_URL=http://openwa:2785
+      - OPENWA_API_KEY=${OPENWA_API_KEY:-freebuff-admin-key}
+      - OPENWA_SESSION_ID=${OPENWA_SESSION_ID:-default}
+      - OPENWA_WEBHOOK_SECRET=${OPENWA_WEBHOOK_SECRET:-}
+      - AI_API_KEY=${AI_API_KEY:-}
+      - AI_BASE_URL=${AI_BASE_URL:-https://api.openai.com/v1}
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - JOB_BACKEND=inline
+    depends_on:
+      openwa:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - freebuff-net
+
+  # ── PostgreSQL (optional profile) ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: freebuff-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: freebuff
+      POSTGRES_PASSWORD: freebuff
+      POSTGRES_DB: freebuff
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freebuff"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+      - full
+    networks:
+      - freebuff-net
+
+  # ── Redis cache (optional profile) ──
+  redis:
+    image: redis:7-alpine
+    container_name: freebuff-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+    networks:
+      - freebuff-net
+
+volumes:
+  openwa-data:
+  postgres-data:
+  redis-data:
+
+networks:
+  freebuff-net:
+    driver: bridge

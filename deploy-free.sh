@@ -1,0 +1,113 @@
+#!/bin/bash
+set -e
+
+echo "🆓 Freebuff + OpenWA — 100% FREE Deployment"
+echo "=============================================="
+echo ""
+echo "  Freebuff  → Vercel (free tier: 100GB bandwidth)"
+echo "  OpenWA    → Render (free tier: 512MB RAM)"
+echo "  Database  → Neon (free tier: 0.5GB storage)"
+echo ""
+echo "  Total cost: $0/month"
+echo ""
+
+# ── Step 1: Check tools ──
+echo "📋 Checking prerequisites..."
+
+if ! command -v npm &> /dev/null; then
+  echo "❌ npm not found. Install Node.js from https://nodejs.org"
+  exit 1
+fi
+
+if ! command -v git &> /dev/null; then
+  echo "❌ git not found. Install from https://git-scm.com"
+  exit 1
+fi
+
+echo "  ✅ npm and git found"
+echo ""
+
+# ── Step 2: Instructions ──
+echo "═══════════════════════════════════════════════════"
+echo "  STEP-BY-STEP FREE DEPLOYMENT GUIDE"
+echo "═══════════════════════════════════════════════════"
+echo ""
+
+echo "📦 STEP 1: Create free PostgreSQL database (Neon)"
+echo "─────────────────────────────────────────────────"
+echo "  1. Go to https://console.neon.tech"
+echo "  2. Sign up with GitHub (free)"
+echo "  3. Create a new project"
+echo "  4. Copy the connection string (looks like:)"
+echo "     postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/dbname?sslmode=require"
+echo "  5. Save it — you'll need it next"
+echo ""
+read -p "  Press Enter when you have your DATABASE_URL..."
+echo ""
+
+echo "📦 STEP 2: Deploy Freebuff to Vercel"
+echo "─────────────────────────────────────"
+echo "  1. Push this repo to GitHub:"
+echo "     git init && git add -A && git commit -m 'deploy'"
+echo "     gh repo create freebuff-desktop --public --push"
+echo ""
+echo "  2. Go to https://vercel.com/new"
+echo "  3. Import your GitHub repo"
+echo "  4. In Environment Variables, add:"
+echo "     DATABASE_URL      = <your Neon URL>"
+echo "     AUTH_SECRET       = $(openssl rand -base64 32 2>/dev/null || echo 'run: openssl rand -base64 32')"
+echo "     NEXT_PUBLIC_APP_URL = https://freebuff.vercel.app"
+echo "     OPENWA_BASE_URL   = https://openwa.onrender.com  (set after Step 3)"
+echo "     OPENWA_API_KEY    = freebuff-admin-key"
+echo "     OPENWA_SESSION_ID = default"
+echo "  5. Deploy!"
+echo ""
+read -p "  Press Enter when Freebuff is deployed on Vercel..."
+echo ""
+
+echo "📦 STEP 3: Deploy OpenWA to Render"
+echo "───────────────────────────────────"
+echo "  1. Go to https://dashboard.render.com"
+echo "  2. Sign up with GitHub (free)"
+echo "  3. Click 'New' → 'Background Worker'"
+echo "  4. Connect your GitHub repo (or fork https://github.com/rmyndharis/OpenWA)"
+echo "  5. Settings:"
+echo "     Name:           openwa"
+echo "     Runtime:        Docker"
+echo "     Dockerfile:     Dockerfile"
+echo "     Instance Type:  Free"
+echo "  6. Environment Variables:"
+echo "     NODE_ENV        = production"
+echo "     PORT            = 2785"
+echo "     ENGINE_TYPE     = baileys"
+echo "     API_KEY         = freebuff-admin-key"
+echo "  7. Create Service"
+echo "  8. Wait for it to deploy, note the URL (https://openwa.onrender.com)"
+echo ""
+echo "  ⚠️  Render free tier sleeps after 15 min of inactivity."
+echo "     OpenWA will need to restart when a message comes in."
+echo "     This adds ~30s latency for first message."
+echo ""
+read -p "  Press Enter when OpenWA is deployed on Render..."
+echo ""
+
+echo "📦 STEP 4: Connect them"
+echo "────────────────────────"
+echo "  1. Open your Freebuff Vercel dashboard"
+echo "  2. Set OPENWA_BASE_URL to your Render URL"
+echo "  3. Open https://your-vercel-url/webhooks"
+echo "  4. Create the Integration record (SQL provided on page)"
+echo "  5. Open https://your-openwa-url → scan QR code"
+echo "  6. Send a test message!"
+echo ""
+
+echo "═══════════════════════════════════════════════════"
+echo "  ✅ DEPLOYMENT COMPLETE"
+echo "═══════════════════════════════════════════════════"
+echo ""
+echo "  🌐 Freebuff:    https://your-app.vercel.app"
+echo "  📱 OpenWA:      https://openwa.onrender.com"
+echo "  🗄️  Database:    Neon (free 0.5GB)"
+echo ""
+echo "  Cost: $0/month"
+echo ""

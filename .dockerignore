@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env*.local
+*.md
+docker-compose.yml
+fly.toml
+railway.json
+vercel.json
+deploy.sh
+test-webhook-e2e.sh
+apps/
